@@ -1,5 +1,19 @@
 .App {
   text-align: center;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 500px;
+  height: 300px;
 }
 
 .App-logo {
