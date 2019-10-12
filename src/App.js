@@ -1,77 +1,104 @@
 import React, { useState, useEffect } from 'react';
 import logo from './logo.svg';
+import Chart from "react-apexcharts";
 import './App.css';
 import {
   Card,
-  Icon,
-  Image,
-  Segment,
   Dimmer,
   Loader,
   Select
 } from 'semantic-ui-react';
 
 function App() {
-  const [price, setPrice] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [rateType, setRateType] = useState(null);
+  const [priceData, setPriceData] = useState(null);
+  const [currency, setCurrency] = useState(null);
+  const [chartData, setChartData] = useState(null);
+  const [series, setSeries] = useState(null);
+
   const options = [
     { value: 'USD', text: 'USD' },
     { value: 'EUR', text: 'EUR' },
-    { value: 'GPB', text: 'GPB' }
+    { value: 'GBP', text: 'GPB' }
   ];
 
   useEffect(() => {
-    fetch('https://api.coindesk.com/v1/bpi/currentprice.json')
-      .then(res => res.json())
-      .then(data => {
-        console.log(data);
-        setRateType(data.bpi.USD.code);
-        setPrice(data.bpi);
-        setLoading(false);
-      });
+    async function fetchPrices() {
+      const res = await fetch('https://api.coindesk.com/v1/bpi/currentprice.json')
+      const data = await res.json();
+      setCurrency(data.bpi.USD.code);
+      setPriceData(data.bpi);
+      getChartData();
+    }
+    fetchPrices();
   }, []);
 
-  const handleSelect = e => {
-    console.log(e.target.value);
-    setRateType(e.target.value);
-  };
-
-  if (!loading) {
-    console.log('price', rateType);
+  const getChartData = async () => {
+    const res = await fetch(`https://api.coindesk.com/v1/bpi/historical/close.json?`)
+    const data = await res.json();
+    const categories = Object.keys(data.bpi);
+    const series = Object.values(data.bpi);
+    setChartData({
+      xaxis: {
+        categories: categories
+      }
+    })
+    setSeries([
+      {
+        name: "Bitcoin Price",
+        data: series
+      }
+    ])
+    setLoading(false);
   }
 
-  return (
-    <div className='App'>
-      <div className='container'>
-        {loading ? (
-          <Segment>
-            <Dimmer active inverted>
-              <Loader>Loading</Loader>
-            </Dimmer>
+  const handleSelect = (e, data) => {
+    setCurrency(data.value);
+  };
 
-            <Image src='https://react.semantic-ui.com/images/wireframe/short-paragraph.png' />
-          </Segment>
-        ) : (
+  return (
+    <div className='container'>
+      <div className="nav" style={{ padding: '15px', backgroundColor: 'gold' }}>
+        Coindesk API Data
+        </div>
+      {loading ? (
+        <div>
+          <Dimmer active inverted>
+            <Loader>Loading</Loader>
+          </Dimmer>
+        </div>
+      ) : (
           <>
-            <div className='form'>
-              <select name='' onChange={handleSelect} id=''>
-                <option value='USD'>USD</option>
-                <option value='EUR'>EUR</option>
-                <option value='GBP'>GBP</option>
-              </select>
+            <div className="price-container"
+              style={{
+                display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+                width: 600,
+                height: 300,
+                margin: '0 auto'
+              }}>
+              <div className='form'>
+                <Select placeholder='Select your currency' onChange={handleSelect} options={options} />
+              </div>
+              <div className='price'>
+                <Card>
+                  <Card.Content>
+                    <Card.Header>{currency} Price</Card.Header>
+                    <Card.Description>{priceData[currency].rate}</Card.Description>
+                  </Card.Content>
+                </Card>
+              </div>
             </div>
-            <div className='price'>
-              <Card>
-                <Card.Content>
-                  <Card.Header>{price[rateType].code} Price</Card.Header>
-                  <Card.Description>{price[rateType].rate}</Card.Description>
-                </Card.Content>
-              </Card>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <Chart
+                options={chartData}
+                series={series}
+                type="line"
+                width="1200"
+                height="300"
+              />
             </div>
           </>
         )}
-      </div>
     </div>
   );
 }
