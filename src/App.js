@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
-import Chart from "react-apexcharts";
 import './App.css';
 import {
   Card,
@@ -13,8 +11,6 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [priceData, setPriceData] = useState(null);
   const [currency, setCurrency] = useState(null);
-  const [chartData, setChartData] = useState(null);
-  const [series, setSeries] = useState(null);
 
   const options = [
     { value: 'USD', text: 'USD' },
@@ -23,34 +19,17 @@ function App() {
   ];
 
   useEffect(() => {
-    async function fetchPrices() {
+    async function fetchData() {
       const res = await fetch('https://api.coindesk.com/v1/bpi/currentprice.json')
       const data = await res.json();
       setCurrency(data.bpi.USD.code);
       setPriceData(data.bpi);
-      getChartData();
+      setLoading(false);
     }
-    fetchPrices();
+    fetchData();
   }, []);
 
-  const getChartData = async () => {
-    const res = await fetch(`https://api.coindesk.com/v1/bpi/historical/close.json?`)
-    const data = await res.json();
-    const categories = Object.keys(data.bpi);
-    const series = Object.values(data.bpi);
-    setChartData({
-      xaxis: {
-        categories: categories
-      }
-    })
-    setSeries([
-      {
-        name: "Bitcoin Price",
-        data: series
-      }
-    ])
-    setLoading(false);
-  }
+
 
   const handleSelect = (e, data) => {
     setCurrency(data.value);
@@ -87,15 +66,6 @@ function App() {
                   </Card.Content>
                 </Card>
               </div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <Chart
-                options={chartData}
-                series={series}
-                type="line"
-                width="1200"
-                height="300"
-              />
             </div>
           </>
         )}
